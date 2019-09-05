@@ -20,4 +20,4 @@ example-static: static $(EXAMPLE_OBJ)
 	$(CC) $(EXAMPLE_OBJ) libport.a -o example-static -Wl,-rpath=$(INSTALL_PREFIX)/lib/ -L$(INSTALL_PREFIX)/lib -lmoar
 
 clean:
-	rm -f $(OBJ) libport.a libport.so example-dynamic example-static
+	rm -f $(OBJ) $(EXAMPLE_OBJ) libport.a libport.so example-dynamic example-static
