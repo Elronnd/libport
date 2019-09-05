@@ -3,7 +3,10 @@ HEADER_DIR ?= /usr/include
 
 # -isystem flag is because moar headers generate warnings
 # GCC doesn't print warnings for headers in the 'system header path'
-CFLAGS := -g -O2 -fPIC -Isrc -I$(HEADER_DIR)/moar -I$(HEADER_DIR)/dyncall -DPERL6_INSTALL_PATH='"$(BUNDLE_DIR)"' -Wall -Wextra
+CFLAGS += -g -O2 -fPIC
+CFLAGS += -std=c99 -D_XOPEN_SOURCE=500 -Wall -Wextra
+CFLAGS += -Isrc -I$(HEADER_DIR)/moar -I$(HEADER_DIR)/dyncall -DPERL6_INSTALL_PATH='"$(BUNDLE_DIR)"'
+
 OBJ := src/port.o
 EXAMPLE_OBJ := src/example.o
 

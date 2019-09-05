@@ -1,5 +1,11 @@
 // originally based on Perl.xs @ https://github.com/niner/inline-perl6
 
+#include <stdlib.h>
+#ifdef __linux__
+#include <alloca.h>
+#endif
+
+// moarvm headers have stuff that makes the compiler complain
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wignored-qualifiers"
 #pragma GCC diagnostic ignored "-Wunused-parameter"
