@@ -38,7 +38,7 @@ my &set-evaluator = nativecast(:(Pointer, &callback (Str)), Pointer.new(+@*ARGS[
 P6State *p6_init(void) {
 	static const char *P6_MOAR_INTERPRETER = PERL6_INSTALL_PATH "/share/perl6/runtime/perl6.moarvm";
 
-	P6State *ret = malloc(sizeof(P6State));
+	P6State *ret = calloc(1, sizeof(P6State));
 	if (!ret) {
 		return NULL;
 	}
@@ -57,17 +57,16 @@ P6State *p6_init(void) {
 	ret->instance->exec_name  = PERL6_INSTALL_PATH "/bin/perl6-m";
 	ret->instance->raw_clargs = NULL;
 
-	/* Map the compilation unit into memory and dissect it. */
+	// Map the compilation unit into memory and dissect it
 	MVMThreadContext *tc = ret->instance->main_thread;
 	ret->cu = MVM_cu_map_from_file(tc, P6_MOAR_INTERPRETER);
 
 	MVMROOT(tc, ret->cu, {
-			/* The call to MVM_string_utf8_decode() may allocate, invalidating the
-			   location cu->body.filename */
+			// The call to MVM_string_utf8_decode() may allocate, invalidating the location cu->body.filename
 			MVMString *const str = MVM_string_utf8_decode(tc, ret->instance->VMString, P6_MOAR_INTERPRETER, strlen(P6_MOAR_INTERPRETER));
 			ret->cu->body.filename = str;
 
-			/* Run deserialization frame, if there is one. */
+			// Run deserialization frame, if there is one
 			if (ret->cu->body.deserialize_frame) {
 				MVM_interp_run(tc, &toplevel_initial_invoke, ret->cu->body.deserialize_frame);
 			}
@@ -87,23 +86,23 @@ P6State *p6_init(void) {
 
 
 	ret->instance->raw_clargs = raw_clargs;
-	//ret->instance->clargs = NULL; /* clear cache */
+	ret->instance->clargs = NULL; // clear cache
 
 	MVM_interp_run(tc, &toplevel_initial_invoke, ret->cu->body.main_frame);
 
-	/* Points to the current opcode. */
+	// Points to the current opcode
 	MVMuint8 *cur_op = NULL;
 
-	/* The current frame's bytecode start. */
+	// The current frame's bytecode start
 	MVMuint8 *bytecode_start = NULL;
 
-	/* Points to the base of the current register set for the frame we
-	 * are presently in. */
+	// Points to the base of the current register set for the frame we are presently in
 	MVMRegister *reg_base = NULL;
 
 	/* Stash addresses of current op, register base and SC deref base
 	 * in the TC; this will be used by anything that needs to switch
-	 * the current place we're interpreting. */
+	 * the current place we're interpreting.
+	 */
 	tc->interp_cur_op         = &cur_op;
 	tc->interp_bytecode_start = &bytecode_start;
 	tc->interp_reg_base       = &reg_base;
