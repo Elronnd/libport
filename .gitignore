@@ -1,4 +1,6 @@
 *.o
-port
+example-static
+example-dynamic
 libport.so
+libport.a
 .*.swp

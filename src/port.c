@@ -113,11 +113,3 @@ void p6_deinit(P6State *state) {
 void p6eval(P6State *state, char *text) {
 	state->evaluator(text);
 }
-
-int main(void) {
-	P6State *state = p6_init();
-	p6eval(state, "my $x = 5; say $x;");
-	p6_deinit(state);
-
-	return 0;
-}
