@@ -1,0 +1,12 @@
+- Run copy_necessary_files.sh on an appropriate directory to get all of your
+  perl6 files somewhere where we can see them.  You probably want /usr, but if
+  you have installed perl6 somewhere else, point it somewhere else.  The script
+  currently only works on unix; patches to make it work on macos or windows
+  welcome!
+
+- Run 'make'.  If you had to point copy_necessary_files at somewhere other than
+  /usr, then you will need to run 'make HEADER_DIR=<that directory>/include' or
+  similar.  You may need to install perl6/rakudo development files, as separate
+  from the interpreter itself--package called perl6-dev or something like that.
+
+- You can try running the example program, or reading its code at src/example.c

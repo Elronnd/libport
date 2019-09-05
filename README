@@ -1,0 +1,5 @@
+This is libport, a library which allows you to use perl6 as a scripting
+language from within c (or any other language that speaks c).  See src/example.c
+for a sample of usage, and INSTALL for installation instructions.
+
+Contributions welcome!
