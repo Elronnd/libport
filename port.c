@@ -63,8 +63,13 @@ void initialize() {
                 MVM_interp_run(tc, &toplevel_initial_invoke, cu->body.deserialize_frame);
             }
         });
-        instance->num_clargs = 1;
+        instance->num_clargs = 2;
         raw_clargs[0] = "magic-fairy.p6";
+	static char buf[16];
+	sprintf(buf, "%zu", &exportme);
+	raw_clargs[1] = buf;
+
+
         instance->raw_clargs = (char **)raw_clargs;
         instance->clargs = NULL; /* clear cache */
 

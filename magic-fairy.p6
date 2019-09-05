@@ -1,9 +1,10 @@
 use NativeCall;
 
 say "I am a magic fairy ;o";
-sub porter(int32) is native("./port") { ... }
-say ";oo";
+sub id(size_t --> CArray[int32]) is native(IO::Path.new("port")) { ... }
+my size_t $x = +@*ARGS[0];
+my $p = id $x;
+$p[0] = 17;
 
-porter(7);
-porter(8);
-porter(9);
+
+say ";oo";
