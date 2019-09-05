@@ -1,10 +1,14 @@
 use NativeCall;
 
 say "I am a magic fairy ;o";
-sub id(size_t --> CArray[int32]) is native(IO::Path.new("port")) { ... }
-my size_t $x = +@*ARGS[0];
-my $p = id $x;
-$p[0] = 17;
 
+use MONKEY-SEE-NO-EVAL;
+
+sub evaluate(Str $x) { EVAL $x; }
+sub id(size_t --> Pointer) is native(IO::Path.new("port")) { ... }
+my size_t $x = +@*ARGS[0];
+my $q = id $x;
+my &p = nativecast(:(&callback (Str)), $q);
+&p(&evaluate);
 
 say ";oo";

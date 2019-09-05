@@ -15,11 +15,9 @@ static void toplevel_initial_invoke(MVMThreadContext *tc, void *data) {
     MVM_frame_invoke(tc, (MVMStaticFrame *)data, MVM_callsite_get_common(tc, MVM_CALLSITE_ID_NULL_ARGS), NULL, NULL, NULL, -1);
 }
 
-int exportme = 0;
-
-void porter(int x) {
-	printf("exported is %d and I have %d ;o\n", exportme, x);
-	exportme++;
+void (*p6eval)(char *str);
+void set_evaluator(void(*x)(char*)) {
+	p6eval = x;
 }
 
 char *library_location = "/home/elronnd/perl5/lib/perl5/x86_64-linux-thread-multi/auto/Inline/Perl6/Perl6.so", *helper_path = "/home/elronnd/perl5/lib/perl5/x86_64-linux-thread-multi/Inline/Perl6/Helper.pm";
@@ -66,7 +64,7 @@ void initialize() {
         instance->num_clargs = 2;
         raw_clargs[0] = "magic-fairy.p6";
 	static char buf[16];
-	sprintf(buf, "%zu", &exportme);
+	sprintf(buf, "%zu", &set_evaluator);
 	raw_clargs[1] = buf;
 
 
@@ -106,7 +104,7 @@ void p6_destroy() {
 }
 
 int main(void) {
-	printf("I am maining \n");
+	puts("I am maining");
 	initialize();
-	printf("I have mained %d", exportme);
+	p6eval("say 'I am the SUPER magical fairy'; my $primp = 17; say $primp;");
 }
