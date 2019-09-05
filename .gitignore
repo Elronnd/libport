@@ -1,6 +1,14 @@
 *.o
+libport.a
+libport.so
 example-static
 example-dynamic
-libport.so
-libport.a
+
+perl6_bundle
+
+# vim turds
 .*.swp
+.*.swo
+.*.swn
+.*.swm
+.*.swl
