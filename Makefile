@@ -5,7 +5,6 @@ default: all
 
 all: $(OBJ)
 	$(CC) $(OBJ) -Wl,-rpath=/home/elronnd/.perl6install/lib/ -lmoar -L/home/elronnd/.perl6install/lib -o port
-	$(CC) port-support.c -shared -Wl,-rpath=/home/elronnd/.perl6install/lib/ -lmoar -L/home/elronnd/.perl6install/lib -o libport.so
 
 clean:
-	rm -f $(OBJ) port libport.so
+	rm -f $(OBJ) port
