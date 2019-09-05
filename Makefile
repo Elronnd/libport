@@ -8,4 +8,4 @@ all: $(OBJ)
 	$(CC) port-support.c -shared -Wl,-rpath=/home/elronnd/.perl6install/lib/ -lmoar -L/home/elronnd/.perl6install/lib -o libport.so
 
 clean:
-	rm -f $(OBJ) port
+	rm -f $(OBJ) port libport.so
