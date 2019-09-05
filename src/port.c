@@ -17,6 +17,14 @@ static void toplevel_initial_invoke(MVMThreadContext *tc, void *data) {
 void set_evaluator(P6State *state, void(*evaluator)(char*)) {
 	state->evaluator = evaluator;
 }
+
+
+static char * const MAGIC_FAIRY_JUICE = "USE NATIVECALL;\
+use MONKEY-SEE-NO-EVAL;\
+sub evaluate(Str $x) { EVAL $x; };\
+my &set-evaluator = nativecast(:(Pointer, &callback (Str)), Pointer.new(+@*ARGS[0]));\
+&set-evaluator(Pointer.new(+@*ARGS[1]), &evaluate);";
+
 P6State *p6_init(void) {
 	static const char *P6_MOAR_INTERPRETER = PERL6_INSTALL_PATH "/share/perl6/runtime/perl6.moarvm";
 
@@ -26,7 +34,7 @@ P6State *p6_init(void) {
 	}
 
 	const char *lib_path[4];
-	char *raw_clargs[3];
+	char *raw_clargs[4];
 
 	MVM_crash_on_error();
 
@@ -63,14 +71,15 @@ P6State *p6_init(void) {
 			}
 		});
 
-	ret->instance->num_clargs = 3;
-	raw_clargs[0] = "magic-fairy.p6";
+	ret->instance->num_clargs = 4;
+	raw_clargs[0] = "-e";
+	raw_clargs[1] = MAGIC_FAIRY_JUICE;
 	static char buf[30];
 	static char buf2[30];
 	sprintf(buf, "%zu", &set_evaluator);
 	sprintf(buf2, "%zu", ret);
-	raw_clargs[1] = buf;
-	raw_clargs[2] = buf2;
+	raw_clargs[2] = buf;
+	raw_clargs[3] = buf2;
 
 
 	ret->instance->raw_clargs = raw_clargs;
