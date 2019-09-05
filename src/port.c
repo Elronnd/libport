@@ -1,5 +1,14 @@
 // originally based on Perl.xs @ https://github.com/niner/inline-perl6
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wignored-qualifiers"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wunused-function"
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#pragma GCC diagnostic ignored "-Wtype-limits"
 #include <moar.h>
+#pragma GCC diagnostic pop
 
 #include "port.h"
 
@@ -74,11 +83,13 @@ P6State *p6_init(void) {
 	ret->instance->num_clargs = 4;
 	raw_clargs[0] = "-e";
 	raw_clargs[1] = MAGIC_FAIRY_JUICE;
+
 	static char buf[30];
-	static char buf2[30];
-	sprintf(buf, "%zu", &set_evaluator);
-	sprintf(buf2, "%zu", ret);
+	sprintf(buf, "%zu", (uintptr_t)set_evaluator);
 	raw_clargs[2] = buf;
+
+	static char buf2[30];
+	sprintf(buf2, "%zu", (uintptr_t)ret);
 	raw_clargs[3] = buf2;
 
 

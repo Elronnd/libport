@@ -1,7 +1,9 @@
 BUNDLE_DIR ?= perl6_bundle
 HEADER_DIR ?= /usr/include
 
-CFLAGS := -g -O2 -fPIC -Isrc -I$(HEADER_DIR)/moar -I$(HEADER_DIR)/dyncall -DPERL6_INSTALL_PATH='"$(BUNDLE_DIR)"'
+# -isystem flag is because moar headers generate warnings
+# GCC doesn't print warnings for headers in the 'system header path'
+CFLAGS := -g -O2 -fPIC -Isrc -I$(HEADER_DIR)/moar -I$(HEADER_DIR)/dyncall -DPERL6_INSTALL_PATH='"$(BUNDLE_DIR)"' -Wall -Wextra
 OBJ := src/port.o
 EXAMPLE_OBJ := src/example.o
 
