@@ -16,6 +16,7 @@
 #include <moar.h>
 #pragma GCC diagnostic pop
 
+#define LIBPORT_IMPLEMENTATION
 #include "port.h"
 
 struct P6State {
@@ -41,7 +42,7 @@ sub evaluate(Str $x) { EVAL $x; };\
 my &set-evaluator = nativecast(:(Pointer, &callback (Str)), Pointer.new(+@*ARGS[0]));\
 &set-evaluator(Pointer.new(+@*ARGS[1]), &evaluate);";
 
-P6State *p6_init(void) {
+LIBPORT_FUNC P6State *p6_init(void) {
 	static const char *P6_MOAR_INTERPRETER = PERL6_INSTALL_PATH "/share/perl6/runtime/perl6.moarvm";
 
 	P6State *ret = calloc(1, sizeof(P6State));
@@ -120,13 +121,13 @@ P6State *p6_init(void) {
 	return ret;
 }
 
-void p6_deinit(P6State *state) {
+LIBPORT_FUNC void p6_deinit(P6State *state) {
 	if (state) free(state);
 
 	// Disabled due to crashes. Also moarvm itself doesn't do this by default.
 	//MVM_vm_destroy_instance(state->instance);
 }
 
-void p6eval(P6State *state, char *text) {
+LIBPORT_FUNC void p6eval(P6State *state, char *text) {
 	state->evaluator(text);
 }
