@@ -19,6 +19,8 @@
 #define LIBPORT_IMPLEMENTATION
 #include "port.h"
 
+#include "fairy-juice.h"
+
 struct P6State {
 	MVMInstance *instance;
 	MVMCompUnit *cu;
@@ -35,12 +37,6 @@ static void set_evaluator(P6State *state, void(*evaluator)(char*)) {
 }
 
 
-static char * const MAGIC_FAIRY_JUICE = "use NativeCall;\
-use MONKEY-SEE-NO-EVAL;\
-my $scratch = 17;\
-sub evaluate(Str $x) { EVAL $x; };\
-my &set-evaluator = nativecast(:(Pointer, &callback (Str)), Pointer.new(+@*ARGS[0]));\
-&set-evaluator(Pointer.new(+@*ARGS[1]), &evaluate);";
 
 LIBPORT_FUNC P6State *p6_init(void) {
 	static const char *P6_MOAR_INTERPRETER = PERL6_INSTALL_PATH "/share/perl6/runtime/perl6.moarvm";
@@ -128,6 +124,9 @@ LIBPORT_FUNC void p6_deinit(P6State *state) {
 	//MVM_vm_destroy_instance(state->instance);
 }
 
-LIBPORT_FUNC void p6eval(P6State *state, char *text) {
+LIBPORT_FUNC P6Val p6eval(P6State *state, char *text) {
 	state->evaluator(text);
+
+	P6Val ret = {0};
+	return ret;
 }

@@ -14,6 +14,11 @@ default: all
 
 all: static dynamic example-static example-dynamic
 
+make-fairy-juice:
+	perl6 make-fairy-juice.p6
+
+src/port.o: make-fairy-juice
+
 dynamic: $(OBJ)
 	$(CC) $(OBJ) -shared -o libport.so -Wl,-rpath=$(BUNDLE_DIR)/lib/ -L$(BUNDLE_DIR)/lib -lmoar
 
@@ -27,4 +32,4 @@ example-static: static $(EXAMPLE_OBJ)
 	$(CC) $(EXAMPLE_OBJ) libport.a -o example-static -Wl,-rpath=$(BUNDLE_DIR)/lib/ -L$(BUNDLE_DIR)/lib -lmoar
 
 clean:
-	rm -f $(OBJ) $(EXAMPLE_OBJ) libport.a libport.so example-dynamic example-static
+	rm -f $(OBJ) $(EXAMPLE_OBJ) libport.a libport.so example-dynamic example-static src/fairy-juice.h

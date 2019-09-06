@@ -6,6 +6,8 @@ example-dynamic
 
 perl6_bundle
 
+src/fairy-juice.h
+
 # vim turds
 .*.swp
 .*.swo
