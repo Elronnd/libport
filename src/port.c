@@ -23,6 +23,8 @@
 
 #include "fairy-juice.h"
 
+P6Val *p6_make_new_error(char *msg);
+
 struct P6State {
 	MVMInstance *instance;
 	MVMCompUnit *cu;
@@ -77,32 +79,28 @@ LIBPORT_FUNC P6State *p6_init(void) {
 			}
 		});
 
-	ret->instance->num_clargs = 9;
 
-	char *raw_clargs[8];
+#define set_clarg(n, p) \
+	raw_clargs[n] = alloca(32); \
+	sprintf(raw_clargs[n], "%zu", (uintptr_t)p)
+
+	char *raw_clargs[11];
+	ret->instance->num_clargs = sizeof(raw_clargs) / sizeof(raw_clargs[0]);
+
 	raw_clargs[0] = "-e";
 	raw_clargs[1] = MAGIC_FAIRY_JUICE;
 
-	raw_clargs[2] = alloca(32);
-	sprintf(raw_clargs[2], "%zu", (uintptr_t)set_evaluator);
+	set_clarg(2, set_evaluator);
+	set_clarg(3, ret);
+	set_clarg(4, p6_make_nil);
+	set_clarg(5, p6_make_int);
+	set_clarg(6, p6_make_num);
+	set_clarg(7, p6_make_str);
+	set_clarg(8, p6_make_bool);
+	set_clarg(9, p6_make_any);
+	set_clarg(10, p6_make_new_error);
 
-	raw_clargs[3] = alloca(32);
-	sprintf(raw_clargs[3], "%zu", (uintptr_t)ret);
-
-	raw_clargs[4] = alloca(32);
-	sprintf(raw_clargs[4], "%zu", (uintptr_t)p6_make_none);
-
-	raw_clargs[5] = alloca(32);
-	sprintf(raw_clargs[5], "%zu", (uintptr_t)p6_make_int);
-
-	raw_clargs[6] = alloca(32);
-	sprintf(raw_clargs[6], "%zu", (uintptr_t)p6_make_num);
-
-	raw_clargs[7] = alloca(32);
-	sprintf(raw_clargs[7], "%zu", (uintptr_t)p6_make_str);
-
-	raw_clargs[8] = alloca(32);
-	sprintf(raw_clargs[8], "%zu", (uintptr_t)p6_make_bool);
+#undef set_clarg
 
 	ret->instance->raw_clargs = raw_clargs;
 	ret->instance->clargs = NULL; // clear cache
@@ -144,8 +142,13 @@ LIBPORT_FUNC P6Val *p6eval(P6State *state, char *text) {
 	return state->evaluator(text);
 }
 
-LIBPORT_FUNC P6Val *p6_make_none(void) {
+LIBPORT_FUNC P6Val *p6_make_nil(void) {
 	return NULL;
+}
+LIBPORT_FUNC P6Val *p6_make_any(void *any) {
+	P6Val *ret = alloc(sizeof(P6Val));
+	*ret = (P6Val){.type = P6Any, .any = any};
+	return ret;
 }
 LIBPORT_FUNC P6Val *p6_make_int(int64_t integer) {
 	P6Val *ret = alloc(sizeof(P6Val));
@@ -157,6 +160,8 @@ LIBPORT_FUNC P6Val *p6_make_num(double num) {
 	*ret = (P6Val){.type = P6Num, .num = num};
 	return ret;
 }
+// N.B. need to strdup here.  Because str is from perl6-land and will get
+// garbage-collected before long else.
 LIBPORT_FUNC P6Val *p6_make_str(char *str) {
 	P6Val *ret = alloc(sizeof(P6Val));
 	*ret = (P6Val){.type = P6Str, .str = strdup(str)};
@@ -165,5 +170,10 @@ LIBPORT_FUNC P6Val *p6_make_str(char *str) {
 LIBPORT_FUNC P6Val *p6_make_bool(bool boolean) {
 	P6Val *ret = alloc(sizeof(P6Val));
 	*ret = (P6Val){.type = P6Bool, .boolean = boolean};
+	return ret;
+}
+P6Val *p6_make_new_error(char *msg) {
+	P6Val *ret = alloc(sizeof(P6Val));
+	*ret = (P6Val){.type = P6Error, .error_msg = strdup(msg)};
 	return ret;
 }

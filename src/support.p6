@@ -3,12 +3,6 @@ unit module support;
 use NativeCall;
 use MONKEY-SEE-NO-EVAL;
 
-my &make-none = nativecast(:(--> Pointer[P6Val]), Pointer.new(+@*ARGS[2]));
-my &make-int = nativecast(:(int64 --> Pointer[P6Val]), Pointer.new(+@*ARGS[3]));
-my &make-num = nativecast(:(num64 --> Pointer[P6Val]), Pointer.new(+@*ARGS[4]));
-my &make-str = nativecast(:(Str --> Pointer[P6Val]), Pointer.new(+@*ARGS[5]));
-my &make-bool = nativecast(:(bool --> Pointer[P6Val]), Pointer.new(+@*ARGS[6]));
-
 class P6Data is repr('CUnion') {
 	has int64 $.int;
 	has num64 $.num;
@@ -21,18 +15,30 @@ class P6Val is repr('CStruct') {
 }
 
 
-enum P6Type<type-none type-int type-num type-str type-bool>;
+my &make-nil = nativecast(:(--> Pointer[P6Val]), Pointer.new(+@*ARGS[2]));
+my &make-int = nativecast(:(int64 --> Pointer[P6Val]), Pointer.new(+@*ARGS[3]));
+my &make-num = nativecast(:(num64 --> Pointer[P6Val]), Pointer.new(+@*ARGS[4]));
+my &make-str = nativecast(:(Str --> Pointer[P6Val]), Pointer.new(+@*ARGS[5]));
+my &make-bool = nativecast(:(bool --> Pointer[P6Val]), Pointer.new(+@*ARGS[6]));
+my &make-any = nativecast(:(Pointer --> Pointer[P6Val]), Pointer.new(+@*ARGS[7]));
+my &make-new-error = nativecast(:(Str --> Pointer[P6Val]), Pointer.new(+@*ARGS[8]));
 
 my $scratch;
 
 sub evaluate(Str $x --> Pointer[P6Val]) {
 	my $val = EVAL $x;
+	say "Evaluating";
 	given $val {
 		when Int { return make-int $val; }
 		when Num { return make-num $val; }
 		when Str { return make-str $val; }
 		when Bool { return make-bool $val; }
-		default { return make-none; }
+		when Nil { return make-nil; }
+		default { say "Trying to any"; return make-any Pointer.new($val); }
+	}
+
+	CATCH {
+		return make-new-error: .Str;
 	}
 }
 
