@@ -3,7 +3,7 @@ HEADER_DIR ?= /usr/include
 
 # -isystem flag is because moar headers generate warnings
 # GCC doesn't print warnings for headers in the 'system header path'
-CFLAGS += -g -O2 -fPIC
+CFLAGS += -g -O0 -fPIC
 CFLAGS += -std=c99 -D_XOPEN_SOURCE=500 -Wall -Wextra
 CFLAGS += -Isrc -I$(HEADER_DIR)/moar -I$(HEADER_DIR)/dyncall -I$(HEADER_DIR)/libtommath -DPERL6_INSTALL_PATH='"$(BUNDLE_DIR)"'
 

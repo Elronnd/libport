@@ -40,6 +40,12 @@ typedef struct {
 
 LIBPORT_FUNC P6State *p6_init(void);
 LIBPORT_FUNC void p6_deinit(P6State *state);
-LIBPORT_FUNC P6Val p6eval(P6State *state, char *text);
+LIBPORT_FUNC P6Val *p6eval(P6State *state, char *text);
+
+LIBPORT_FUNC P6Val *p6_make_none(void);
+LIBPORT_FUNC P6Val *p6_make_int(int64_t integer);
+LIBPORT_FUNC P6Val *p6_make_num(double num);
+LIBPORT_FUNC P6Val *p6_make_str(char *str);
+LIBPORT_FUNC P6Val *p6_make_bool(bool boolean);
 
 #endif//PORT_H

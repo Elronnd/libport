@@ -16,6 +16,8 @@
 #include <moar.h>
 #pragma GCC diagnostic pop
 
+#define alloc(n) calloc(1, (n))
+
 #define LIBPORT_IMPLEMENTATION
 #include "port.h"
 
@@ -24,7 +26,7 @@
 struct P6State {
 	MVMInstance *instance;
 	MVMCompUnit *cu;
-	void (*evaluator)(char *str);
+	P6Val *(*evaluator)(char *str);
 };
 
 static void toplevel_initial_invoke(MVMThreadContext *tc, void *data) {
@@ -32,7 +34,7 @@ static void toplevel_initial_invoke(MVMThreadContext *tc, void *data) {
 	MVM_frame_invoke(tc, (MVMStaticFrame *)data, MVM_callsite_get_common(tc, MVM_CALLSITE_ID_NULL_ARGS), NULL, NULL, NULL, -1);
 }
 
-static void set_evaluator(P6State *state, void(*evaluator)(char*)) {
+static void set_evaluator(P6State *state, P6Val *(*evaluator)(char*)) {
 	state->evaluator = evaluator;
 }
 
@@ -41,7 +43,7 @@ static void set_evaluator(P6State *state, void(*evaluator)(char*)) {
 LIBPORT_FUNC P6State *p6_init(void) {
 	static const char *P6_MOAR_INTERPRETER = PERL6_INSTALL_PATH "/share/perl6/runtime/perl6.moarvm";
 
-	P6State *ret = calloc(1, sizeof(P6State));
+	P6State *ret = alloc(sizeof(P6State));
 	if (!ret) {
 		return NULL;
 	}
@@ -75,9 +77,9 @@ LIBPORT_FUNC P6State *p6_init(void) {
 			}
 		});
 
-	ret->instance->num_clargs = 4;
+	ret->instance->num_clargs = 9;
 
-	char *raw_clargs[4];
+	char *raw_clargs[8];
 	raw_clargs[0] = "-e";
 	raw_clargs[1] = MAGIC_FAIRY_JUICE;
 
@@ -87,6 +89,20 @@ LIBPORT_FUNC P6State *p6_init(void) {
 	raw_clargs[3] = alloca(32);
 	sprintf(raw_clargs[3], "%zu", (uintptr_t)ret);
 
+	raw_clargs[4] = alloca(32);
+	sprintf(raw_clargs[4], "%zu", (uintptr_t)p6_make_none);
+
+	raw_clargs[5] = alloca(32);
+	sprintf(raw_clargs[5], "%zu", (uintptr_t)p6_make_int);
+
+	raw_clargs[6] = alloca(32);
+	sprintf(raw_clargs[6], "%zu", (uintptr_t)p6_make_num);
+
+	raw_clargs[7] = alloca(32);
+	sprintf(raw_clargs[7], "%zu", (uintptr_t)p6_make_str);
+
+	raw_clargs[8] = alloca(32);
+	sprintf(raw_clargs[8], "%zu", (uintptr_t)p6_make_bool);
 
 	ret->instance->raw_clargs = raw_clargs;
 	ret->instance->clargs = NULL; // clear cache
@@ -124,9 +140,30 @@ LIBPORT_FUNC void p6_deinit(P6State *state) {
 	//MVM_vm_destroy_instance(state->instance);
 }
 
-LIBPORT_FUNC P6Val p6eval(P6State *state, char *text) {
-	state->evaluator(text);
+LIBPORT_FUNC P6Val *p6eval(P6State *state, char *text) {
+	return state->evaluator(text);
+}
 
-	P6Val ret = {0};
+LIBPORT_FUNC P6Val *p6_make_none(void) {
+	return NULL;
+}
+LIBPORT_FUNC P6Val *p6_make_int(int64_t integer) {
+	P6Val *ret = alloc(sizeof(P6Val));
+	*ret = (P6Val){.type = P6Int, .integer = integer};
+	return ret;
+}
+LIBPORT_FUNC P6Val *p6_make_num(double num) {
+	P6Val *ret = alloc(sizeof(P6Val));
+	*ret = (P6Val){.type = P6Num, .num = num};
+	return ret;
+}
+LIBPORT_FUNC P6Val *p6_make_str(char *str) {
+	P6Val *ret = alloc(sizeof(P6Val));
+	*ret = (P6Val){.type = P6Str, .str = strdup(str)};
+	return ret;
+}
+LIBPORT_FUNC P6Val *p6_make_bool(bool boolean) {
+	P6Val *ret = alloc(sizeof(P6Val));
+	*ret = (P6Val){.type = P6Bool, .boolean = boolean};
 	return ret;
 }
