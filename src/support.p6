@@ -26,19 +26,20 @@ my &make-new-error = nativecast(:(Str --> Pointer[P6Val]), Pointer.new(+@*ARGS[8
 my $scratch;
 
 sub evaluate(Str $x --> Pointer[P6Val]) {
-	my $val = EVAL $x;
-	say "Evaluating";
-	given $val {
-		when Int { return make-int $val; }
-		when Num { return make-num $val; }
-		when Str { return make-str $val; }
-		when Bool { return make-bool $val; }
-		when Nil { return make-nil; }
-		default { say "Trying to any"; return make-any Pointer.new($val); }
+	try {
+		my $val = EVAL $x;
+		given $val {
+			when Bool { return make-bool $val; }
+			when Int { return make-int $val; }
+			when Num { return make-num $val; }
+			when Str { return make-str $val; }
+			when Nil { return make-nil; }
+			default { return make-any Pointer.new(Pointer.new); }
+		}
 	}
 
-	CATCH {
-		return make-new-error: .Str;
+	if $! {
+		return make-new-error($!.gist.lines[1] ~ " (" ~ $!.^name ~ "):\n" ~ $!.gist.lines[2 .. *].join("\n"));
 	}
 }
 
