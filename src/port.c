@@ -23,8 +23,6 @@
 
 #include "fairy-juice.h"
 
-P6Val *p6_make_new_error(char *msg);
-
 struct P6State {
 	MVMInstance *instance;
 	MVMCompUnit *cu;
@@ -84,7 +82,7 @@ LIBPORT_FUNC P6State *p6_init(void) {
 	raw_clargs[n] = alloca(32); \
 	sprintf(raw_clargs[n], "%zu", (uintptr_t)p)
 
-	char *raw_clargs[11];
+	char *raw_clargs[14];
 	ret->instance->num_clargs = sizeof(raw_clargs) / sizeof(raw_clargs[0]);
 
 	raw_clargs[0] = "-e";
@@ -98,7 +96,10 @@ LIBPORT_FUNC P6State *p6_init(void) {
 	set_clarg(7, p6_make_str);
 	set_clarg(8, p6_make_bool);
 	set_clarg(9, p6_make_any);
-	set_clarg(10, p6_make_new_error);
+	set_clarg(10, p6_make_error);
+	set_clarg(11, p6_make_sub);
+	set_clarg(12, p6_make_list);
+	set_clarg(13, p6_list_append);
 
 #undef set_clarg
 
@@ -172,8 +173,82 @@ LIBPORT_FUNC P6Val *p6_make_bool(bool boolean) {
 	*ret = (P6Val){.type = P6Bool, .boolean = boolean};
 	return ret;
 }
-P6Val *p6_make_new_error(char *msg) {
+// ditto for strdup
+P6Val *p6_make_error(char *msg) {
 	P6Val *ret = alloc(sizeof(P6Val));
 	*ret = (P6Val){.type = P6Error, .error_msg = strdup(msg)};
 	return ret;
+}
+LIBPORT_FUNC P6Val *p6_make_sub(void *address, const P6Type *arguments, ssize_t arity) {
+	P6Val *ret = alloc(sizeof(P6Val));
+	ret->sub.addr = address;
+	ret->type = P6Sub;
+	ret->sub.arity = arity;
+	if (arity > 0) {
+		ret->sub.arguments = alloc(sizeof(P6Type) * arity);
+		memcpy(ret->sub.arguments, arguments, sizeof(P6Type) * arity);
+	}
+
+	return ret;
+}
+LIBPORT_FUNC P6Val *p6_make_list(const P6Val *vals, size_t num_vals) {
+	P6Val *ret = alloc(sizeof(P6Val));
+	ret->type = P6List;
+	ret->list.len = num_vals;
+	ret->list.vals = alloc(sizeof(P6Val) * num_vals);
+	memcpy(ret->list.vals, vals, sizeof(P6Val) * num_vals);
+
+	return ret;
+}
+
+LIBPORT_FUNC P6Type p6_typeof(const P6Val *val) {
+	if (!val) return P6Nil;
+	return val->type;
+}
+LIBPORT_FUNC void p6_val_free(P6Val *val) {
+	switch (p6_typeof(val)) {
+		// P6Nil is a NULL pointer, so can't access any members
+		case P6Nil: return;
+
+		// don't have any dynamic data
+		case P6Any:
+		case P6Int:
+		case P6Num:
+		case P6Bool:
+			    break;
+
+		case P6Str: free(val->str); break;
+		case P6Error: free(val->error_msg); break;
+		case P6Sub: free(val->sub.arguments); break;
+		case P6List: free(val->list.vals); break;
+	}
+
+	free(val);
+}
+LIBPORT_FUNC P6Val *p6_val_copy(const P6Val *val) {
+	switch (p6_typeof(val)) {
+		case P6Str: return p6_make_str(val->str);
+		case P6Error: return p6_make_error(val->error_msg);
+		case P6Sub: return p6_make_sub(val->sub.addr, val->sub.arguments, val->sub.arity);
+		case P6List: return p6_make_list(val->list.vals, val->list.len);
+
+		case P6Any:
+		case P6Int:
+		case P6Num:
+		case P6Bool:
+			{
+				P6Val *ret = alloc(sizeof(P6Val));
+				*ret = *val;
+				return ret;
+			}
+
+		case P6Nil: default: return NULL;
+
+	}
+}
+LIBPORT_FUNC void p6_list_append(P6Val *list, P6Val *item) {
+	assert (p6_typeof(list) == P6List); //TODO: figure out what the typechecking scheme should be
+
+	list->list.vals = realloc(list->list.vals, sizeof(P6Val) * ++list->list.len);
+	list->list.vals[list->list.len - 1] = *p6_val_copy(item);
 }

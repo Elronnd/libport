@@ -4,7 +4,7 @@ HEADER_DIR ?= /usr/include
 # -isystem flag is because moar headers generate warnings
 # GCC doesn't print warnings for headers in the 'system header path'
 CFLAGS += -g -O0 -fPIC
-CFLAGS += -std=c99 -D_XOPEN_SOURCE=500 -Wall -Wextra
+CFLAGS += -std=c11 -D_XOPEN_SOURCE=500 -Wall -Wextra
 CFLAGS += -Isrc -I$(HEADER_DIR)/moar -I$(HEADER_DIR)/dyncall -I$(HEADER_DIR)/libtommath -DPERL6_INSTALL_PATH='"$(BUNDLE_DIR)"'
 
 OBJ := src/port.o
@@ -26,10 +26,10 @@ static: $(OBJ)
 	ar rcs libport.a $(OBJ)
 
 example-dynamic: dynamic $(EXAMPLE_OBJ)
-	$(CC) $(EXAMPLE_OBJ) -o example-dynamic -Wl,-rpath=. -L. -lport
+	$(CC) $(CFLAGS) $(EXAMPLE_OBJ) -o example-dynamic -Wl,-rpath=. -L. -lport
 
 example-static: static $(EXAMPLE_OBJ)
-	$(CC) $(EXAMPLE_OBJ) libport.a -o example-static -Wl,-rpath=$(BUNDLE_DIR)/lib/ -L$(BUNDLE_DIR)/lib -lmoar
+	$(CC) $(CFLAGS) $(EXAMPLE_OBJ) libport.a -o example-static -Wl,-rpath=$(BUNDLE_DIR)/lib/ -L$(BUNDLE_DIR)/lib -lmoar
 
 clean:
 	rm -f $(OBJ) $(EXAMPLE_OBJ) libport.a libport.so example-dynamic example-static src/fairy-juice.h

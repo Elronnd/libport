@@ -5,4 +5,6 @@ for "src/support.p6".IO.lines {
 }
 $text ~= "\";\n";
 
+exit if $text eq slurp "src/fairy-juice.h";
+
 spurt "src/fairy-juice.h", $text;
