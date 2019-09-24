@@ -23,16 +23,16 @@ my &make-sub = nativecast(:(&fun (int64, int64), uint32, CArray[uint32], ssize_t
 my &make-list = nativecast(:(CArray[P6Val], size_t --> P6Val), Pointer.new(+@*ARGS[10]));
 my &list-append = nativecast(:(P6Val, P6Val), Pointer.new(+@*ARGS[11]));
 
-my &get-arity = nativecast(:(P6Val --> ssize_t), Pointer.new(+@*ARGS[13]));
-my &get-bool = nativecast(:(P6Val --> bool), Pointer.new(+@*ARGS[14]));
-my &get-funcptr = nativecast(:(P6Val --> Pointer), Pointer.new(+@*ARGS[15]));
-my &get-int = nativecast(:(P6Val --> int64), Pointer.new(+@*ARGS[16]));
-my &get-num = nativecast(:(P6Val --> num64), Pointer.new(+@*ARGS[17]));
-my &get-parameter-types = nativecast(:(P6Val --> CArray[uint32]), Pointer.new(+@*ARGS[18]));
-my &get-str = nativecast(:(P6Val --> Str), Pointer.new(+@*ARGS[19]));
-my &list-index = nativecast(:(P6Val, size_t --> P6Val), Pointer.new(+@*ARGS[20]));
-my &list-len = nativecast(:(P6Val --> size_t), Pointer.new(+@*ARGS[21]));
-my &get-return-type = nativecast(:(P6Val --> uint32), Pointer.new(+@*ARGS[22]));
+my &get-arity = nativecast(:(P6Val --> ssize_t), Pointer.new(+@*ARGS[12]));
+my &get-bool = nativecast(:(P6Val --> bool), Pointer.new(+@*ARGS[13]));
+my &get-funcptr = nativecast(:(P6Val --> Pointer), Pointer.new(+@*ARGS[14]));
+my &get-int = nativecast(:(P6Val --> int64), Pointer.new(+@*ARGS[15]));
+my &get-num = nativecast(:(P6Val --> num64), Pointer.new(+@*ARGS[16]));
+my &get-parameter-types = nativecast(:(P6Val --> CArray[uint32]), Pointer.new(+@*ARGS[17]));
+my &get-str = nativecast(:(P6Val --> Str), Pointer.new(+@*ARGS[18]));
+my &list-index = nativecast(:(P6Val, size_t --> P6Val), Pointer.new(+@*ARGS[19]));
+my &list-len = nativecast(:(P6Val --> size_t), Pointer.new(+@*ARGS[20]));
+my &get-return-type = nativecast(:(P6Val --> uint32), Pointer.new(+@*ARGS[21]));
 
 enum P6Type<P6Any P6Nil P6Int P6Num P6Str P6Bool P6Error P6Sub P6List>;
 sub native-typeid-to-p6(uint32 $type) {

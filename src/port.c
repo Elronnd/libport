@@ -84,7 +84,7 @@ LIBPORT_FUNC P6State *p6_init(void) {
 	raw_clargs[n] = alloca(32); \
 	sprintf(raw_clargs[n], "%zu", (uintptr_t)p)
 
-	char *raw_clargs[25];
+	char *raw_clargs[24];
 	ret->instance->num_clargs = sizeof(raw_clargs) / sizeof(raw_clargs[0]);
 
 	raw_clargs[0] = "-e";
@@ -102,18 +102,17 @@ LIBPORT_FUNC P6State *p6_init(void) {
 	set_clarg(11, p6_make_sub);
 	set_clarg(12, p6_make_list);
 	set_clarg(13, p6_list_append);
-	set_clarg(14, p6_typeof);
 
-	set_clarg(15, p6_get_arity);
-	set_clarg(16, p6_get_bool);
-	set_clarg(17, p6_get_funcptr);
-	set_clarg(18, p6_get_int);
-	set_clarg(19, p6_get_num);
-	set_clarg(20, p6_get_parameter_types);
-	set_clarg(21, p6_get_str);
-	set_clarg(22, p6_list_index);
-	set_clarg(23, p6_list_len);
-	set_clarg(24, p6_get_return_type);
+	set_clarg(14, p6_get_arity);
+	set_clarg(15, p6_get_bool);
+	set_clarg(16, p6_get_funcptr);
+	set_clarg(17, p6_get_int);
+	set_clarg(18, p6_get_num);
+	set_clarg(19, p6_get_parameter_types);
+	set_clarg(20, p6_get_str);
+	set_clarg(21, p6_list_index);
+	set_clarg(22, p6_list_len);
+	set_clarg(23, p6_get_return_type);
 #undef set_clarg
 
 	ret->instance->raw_clargs = raw_clargs;
