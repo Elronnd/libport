@@ -37,38 +37,38 @@ my &get-return-type = nativecast(:(P6Val --> uint32), Pointer.new(+@*ARGS[21]));
 enum P6Type<P6Any P6Nil P6Int P6Num P6Str P6Bool P6Error P6Sub P6List>;
 sub native-typeid-to-p6(uint32 $type) {
 	given $type {
-		when P6Any { return Any; }
-		when P6Nil { return Any; }
-		when P6Int { return int64; }
-		when P6Num { return num64; }
-		when P6Str { return Str; }
-		when P6Bool { return bool; }
-		when P6Sub { return Sub; }
-		when P6List { return List; }
-		default { return Any; }
+		when P6Any { Any }
+		when P6Nil { Any }
+		when P6Int { int64 }
+		when P6Num { num64 }
+		when P6Str { Str }
+		when P6Bool { bool }
+		when P6Sub { Sub }
+		when P6List { List }
+		default { Any }
 	}
 }
 sub p6-typeid-to-native($type) {
 	given ($type ~~ Parameter) ?? $type.type !! $type {
-		when Bool { P6Bool; }
-		when Int { P6Int; }
-		when Num { P6Num; }
-		when Str { P6Str; }
-		when Sub { P6Sub; }
-		when List { P6List; }
-		when Nil { P6Nil; }
-		default { P6Any; }
+		when Bool { P6Bool }
+		when Int { P6Int }
+		when Num { P6Num }
+		when Str { P6Str }
+		when Sub { P6Sub }
+		when List { P6List }
+		when Nil { P6Nil }
+		default { P6Any }
 	}
 }
 
 sub p6-to-native($val --> P6Val) {
 	given $val {
-		when Bool { return make-bool $val; } # this has to be before Int, because Bool ~~ Int
-		when Int { return make-int $val; }
-		when Num { return make-num $val; }
-		when Rat { return make-num Num($val); }
-		when Str { return make-str $val; }
-		when Nil { return make-nil; }
+		when Bool { make-bool $val } # this has to be before Int, because Bool ~~ Int
+		when Int { make-int $val }
+		when Num { make-num $val }
+		when Rat { make-num Num($val) }
+		when Str { make-str $val }
+		when Nil { make-nil }
 		when Sub {
 			# variadic
 			if $val.arity != $val.count {
@@ -88,17 +88,17 @@ sub p6-to-native($val --> P6Val) {
 			}
 			return $ret;
 		}
-		default { return make-any Pointer.new; }
+		default { make-any Pointer.new; }
 	}
 }
 sub native-to-p6(P6Val $val) {
 	given $val.type {
-		when P6Any { return Any; }
-		when P6Nil { return Nil; }
-		when P6Int { return get-int $val; }
-		when P6Num { return get-num $val; }
-		when P6Str { return get-str $val; }
-		when P6Bool { return get-bool $val; }
+		when P6Any { Any }
+		when P6Nil { Nil }
+		when P6Int { get-int $val }
+		when P6Num { get-num $val }
+		when P6Str { get-str $val }
+		when P6Bool { get-bool $val }
 
 		when P6Sub {
 			my @parameter-types;
@@ -110,7 +110,6 @@ sub native-to-p6(P6Val $val) {
 
 			my $signature = Signature.new(params => @parameter-types.map({Parameter.new(type => $_)}), returns => native-typeid-to-p6 get-return-type $val); #, count => ($arity < 0) ?? Inf !! +@parameter-types);
 
-			say "signature is {$signature.perl}, pointer is ", get-funcptr $val;
 			return nativecast($signature, get-funcptr $val);
 		}
 
@@ -121,7 +120,7 @@ sub native-to-p6(P6Val $val) {
 			}
 			return @ret;
 		}
-		default { return Any; }
+		default { Any }
 	}
 }
 sub evaluate(Str $x --> P6Val) {
