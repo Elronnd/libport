@@ -321,3 +321,89 @@ LIBPORT_FUNC size_t p6_list_len(const P6Val *val) {
 	assert (p6_typeof(val) == P6List);
 	return val->list.len;
 }
+
+LIBPORT_FUNC bool p6_equal(const P6Val *lhs, const P6Val *rhs) {
+	if (p6_typeof(lhs) != p6_typeof(rhs)) {
+		return false;
+	}
+
+	switch (p6_typeof(lhs)) {
+		case P6Any: case P6Nil: return true;
+		case P6Int: return p6_get_int(lhs) == p6_get_int(rhs);
+		case P6Num: return p6_get_num(lhs) == p6_get_num(rhs);
+		case P6Str: return !strcmp(p6_get_str(lhs), p6_get_str(rhs));
+		case P6Bool: return p6_get_bool(lhs) == p6_get_bool(rhs);
+		case P6Error: return false;
+		case P6Sub: return p6_get_funcptr(lhs) == p6_get_funcptr(rhs);
+		case P6List:
+			    if (p6_list_len(lhs) != p6_list_len(rhs)) {
+				    return false;
+			    }
+			    for (size_t i = 0; i < p6_list_len(lhs); i++) {
+				    if (!p6_equal(p6_list_index(lhs, i), p6_list_index(rhs, i))) {
+					    return false;
+				    }
+			    }
+			    return true;
+	}
+
+	assert(0);
+}
+
+LIBPORT_FUNC size_t p6_format_val_as_str(const P6Val *val, char *outbuf, size_t buflen) {
+	if (!buflen) return 0;
+#define proper_length (offset > buflen) ? 0 : buflen - offset
+
+	size_t offset = 0;
+
+	switch (p6_typeof(val)) {
+		case P6Nil: return snprintf(outbuf, buflen, "Nil");
+		case P6Any: return snprintf(outbuf, buflen, "<any %p>", val->any);
+		case P6Int: return snprintf(outbuf, buflen, "%ld", val->integer);
+		case P6Num: return snprintf(outbuf, buflen, "%lf", val->num);
+		case P6Str: return snprintf(outbuf, buflen, "'%s'", val->str);
+		case P6Bool: return snprintf(outbuf, buflen, "%s", val->boolean ? "True" : "False");
+		case P6Error: return snprintf(outbuf, buflen, "ERROR - %s\n", val->error_msg);
+		case P6List:
+			offset += snprintf(outbuf, buflen, "[");
+			for (size_t i = 0; i < val->list.len; i++) {
+				offset += p6_format_val_as_str(val->list.vals + i, outbuf + offset, proper_length);
+				if (i != val->list.len - 1) offset += snprintf(outbuf + offset, proper_length, " ");
+			}
+			return offset += snprintf(outbuf + offset, proper_length, "]");
+		case P6Sub:
+			offset += snprintf(outbuf, buflen, "<Sub %p>(", val->sub.addr);
+
+			if (val->sub.arity < 0) {
+				offset += snprintf(outbuf + offset, proper_length, "...");
+			} else {
+				for (size_t i = 0; i < val->sub.arity; i++) {
+					offset += p6_format_type_as_str(val->sub.arguments[i], outbuf + offset, proper_length);
+					if (i != val->sub.arity - 1) offset += snprintf(outbuf + offset, proper_length, ", ");
+				}
+			}
+
+			offset += snprintf(outbuf + offset, proper_length, ") --> ");
+			return offset += p6_format_type_as_str(val->sub.ret, outbuf + offset, proper_length);
+			return offset += snprintf(outbuf + offset, proper_length, ">");
+	}
+
+	assert(0);
+#undef proper_length
+}
+
+LIBPORT_FUNC size_t p6_format_type_as_str(P6Type type, char *outbuf, size_t buflen) {
+	switch (type) {
+		case P6Any: return snprintf(outbuf, buflen, "Any");
+		case P6Nil: return snprintf(outbuf, buflen, "Nil");
+		case P6Int: return snprintf(outbuf, buflen, "Int");
+		case P6Num: return snprintf(outbuf, buflen, "Num");
+		case P6Str: return snprintf(outbuf, buflen, "Str");
+		case P6Bool: return snprintf(outbuf, buflen, "Bool");
+		case P6Error: return snprintf(outbuf, buflen, "Error");
+		case P6Sub: return snprintf(outbuf, buflen, "Sub");
+		case P6List: return snprintf(outbuf, buflen, "List");
+	}
+
+	assert(0);
+}

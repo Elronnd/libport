@@ -98,4 +98,10 @@ LIBPORT_FUNC void p6_val_free(P6Val *val);
 LIBPORT_FUNC P6Val *p6_val_copy(const P6Val *val);
 LIBPORT_FUNC void p6_list_append(P6Val *list, P6Val *item);
 
+LIBPORT_FUNC bool p6_equal(const P6Val *lhs, const P6Val *rhs);
+
+LIBPORT_FUNC size_t p6_format_val_as_str(const P6Val *val, char *outbuf, size_t buflen);
+LIBPORT_FUNC size_t p6_format_type_as_str(P6Type type, char *outbuf, size_t buflen);
+
+
 #endif//PORT_H
