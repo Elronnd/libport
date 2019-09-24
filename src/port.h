@@ -38,6 +38,8 @@ typedef enum {
 static_assert (sizeof(P6Type) == sizeof(uint32_t), "enums are not sized to 32 bits");
 
 typedef struct P6Val P6Val;
+//TODO maybe have a crazy scheme where, if the first bit is 1, then the rest is
+//63 bits of an integer?  Or is that a terrible idea?
 struct P6Val {
 	union {
 		void *any;
@@ -51,6 +53,7 @@ struct P6Val {
 
 			ssize_t arity; // negative => variadic
 			P6Type *arguments;
+			P6Type ret;
 		} sub;
 
 		struct {
@@ -66,7 +69,7 @@ struct P6Val {
 LIBPORT_FUNC P6State *p6_init(void);
 LIBPORT_FUNC void p6_deinit(P6State *state);
 LIBPORT_FUNC P6Val *p6eval(P6State *state, char *text);
-LIBPORT_FUNC P6Val *p6_call(P6State *state, P6Val *fun, P6Val *argument_list);
+LIBPORT_FUNC P6Val *p6call(P6State *state, P6Val *fun, P6Val *argument_list);
 
 LIBPORT_FUNC P6Val *p6_make_nil(void);
 LIBPORT_FUNC P6Val *p6_make_any(void *any);
@@ -75,8 +78,19 @@ LIBPORT_FUNC P6Val *p6_make_num(double num);
 LIBPORT_FUNC P6Val *p6_make_str(char *str);
 LIBPORT_FUNC P6Val *p6_make_bool(bool boolean);
 LIBPORT_FUNC P6Val *p6_make_error(char *msg);
-LIBPORT_FUNC P6Val *p6_make_sub(void *address, const P6Type *arguments, ssize_t arity);
+LIBPORT_FUNC P6Val *p6_make_sub(void *address, P6Type ret, const P6Type *arguments, ssize_t arity);
 LIBPORT_FUNC P6Val *p6_make_list(const P6Val *vals, size_t num_vals);
+
+LIBPORT_FUNC int64_t p6_get_int(const P6Val *val);
+LIBPORT_FUNC double p6_get_num(const P6Val *val);
+LIBPORT_FUNC char *p6_get_str(const P6Val *val);
+LIBPORT_FUNC bool p6_get_bool(const P6Val *val);
+LIBPORT_FUNC void *p6_get_funcptr(const P6Val *val);
+LIBPORT_FUNC ssize_t p6_get_arity(const P6Val *val);
+LIBPORT_FUNC P6Type p6_get_return_type(const P6Val *val);
+LIBPORT_FUNC P6Type *p6_get_parameter_types(const P6Val *val);
+LIBPORT_FUNC P6Val *p6_list_index(const P6Val *val, size_t i);
+LIBPORT_FUNC size_t p6_list_len(const P6Val *val);
 
 LIBPORT_FUNC P6Type p6_typeof(const P6Val *val);
 LIBPORT_FUNC void p6_val_free(P6Val *val);

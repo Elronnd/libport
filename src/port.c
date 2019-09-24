@@ -27,15 +27,17 @@ struct P6State {
 	MVMInstance *instance;
 	MVMCompUnit *cu;
 	P6Val *(*evaluator)(char *str);
+	P6Val *(*caller)(P6Val *fun, P6Val *argumentlist);
 };
 
 static void toplevel_initial_invoke(MVMThreadContext *tc, void *data) {
 	// Create initial frame, which sets up all of the interpreter state also.
-	MVM_frame_invoke(tc, (MVMStaticFrame *)data, MVM_callsite_get_common(tc, MVM_CALLSITE_ID_NULL_ARGS), NULL, NULL, NULL, -1);
+	MVM_frame_invoke(tc, data, MVM_callsite_get_common(tc, MVM_CALLSITE_ID_NULL_ARGS), NULL, NULL, NULL, -1);
 }
 
-static void set_evaluator(P6State *state, P6Val *(*evaluator)(char*)) {
+static void set_evaluator(P6State *state, P6Val *(*evaluator)(char*), P6Val *(*caller)(P6Val*,P6Val*)) {
 	state->evaluator = evaluator;
+	state->caller = caller;
 }
 
 
@@ -82,7 +84,7 @@ LIBPORT_FUNC P6State *p6_init(void) {
 	raw_clargs[n] = alloca(32); \
 	sprintf(raw_clargs[n], "%zu", (uintptr_t)p)
 
-	char *raw_clargs[14];
+	char *raw_clargs[25];
 	ret->instance->num_clargs = sizeof(raw_clargs) / sizeof(raw_clargs[0]);
 
 	raw_clargs[0] = "-e";
@@ -100,7 +102,18 @@ LIBPORT_FUNC P6State *p6_init(void) {
 	set_clarg(11, p6_make_sub);
 	set_clarg(12, p6_make_list);
 	set_clarg(13, p6_list_append);
+	set_clarg(14, p6_typeof);
 
+	set_clarg(15, p6_get_arity);
+	set_clarg(16, p6_get_bool);
+	set_clarg(17, p6_get_funcptr);
+	set_clarg(18, p6_get_int);
+	set_clarg(19, p6_get_num);
+	set_clarg(20, p6_get_parameter_types);
+	set_clarg(21, p6_get_str);
+	set_clarg(22, p6_list_index);
+	set_clarg(23, p6_list_len);
+	set_clarg(24, p6_get_return_type);
 #undef set_clarg
 
 	ret->instance->raw_clargs = raw_clargs;
@@ -142,6 +155,12 @@ LIBPORT_FUNC void p6_deinit(P6State *state) {
 LIBPORT_FUNC P6Val *p6eval(P6State *state, char *text) {
 	return state->evaluator(text);
 }
+LIBPORT_FUNC P6Val *p6call(P6State *state, P6Val *fun, P6Val *argumentlist) {
+	assert (p6_typeof(fun) == P6Sub);
+	assert (p6_typeof(argumentlist) == P6List);
+	assert ((fun->sub.arity < 0) || (fun->sub.arity == argumentlist->list.len));
+	return state->caller(fun, argumentlist);
+}
 
 LIBPORT_FUNC P6Val *p6_make_nil(void) {
 	return NULL;
@@ -173,15 +192,16 @@ LIBPORT_FUNC P6Val *p6_make_bool(bool boolean) {
 	*ret = (P6Val){.type = P6Bool, .boolean = boolean};
 	return ret;
 }
-// ditto for strdup
+// ditto re strdup
 P6Val *p6_make_error(char *msg) {
 	P6Val *ret = alloc(sizeof(P6Val));
 	*ret = (P6Val){.type = P6Error, .error_msg = strdup(msg)};
 	return ret;
 }
-LIBPORT_FUNC P6Val *p6_make_sub(void *address, const P6Type *arguments, ssize_t arity) {
+LIBPORT_FUNC P6Val *p6_make_sub(void *address, P6Type return_type, const P6Type *arguments, ssize_t arity) {
 	P6Val *ret = alloc(sizeof(P6Val));
 	ret->sub.addr = address;
+	ret->sub.ret = return_type;
 	ret->type = P6Sub;
 	ret->sub.arity = arity;
 	if (arity > 0) {
@@ -229,7 +249,7 @@ LIBPORT_FUNC P6Val *p6_val_copy(const P6Val *val) {
 	switch (p6_typeof(val)) {
 		case P6Str: return p6_make_str(val->str);
 		case P6Error: return p6_make_error(val->error_msg);
-		case P6Sub: return p6_make_sub(val->sub.addr, val->sub.arguments, val->sub.arity);
+		case P6Sub: return p6_make_sub(val->sub.addr, val->sub.ret, val->sub.arguments, val->sub.arity);
 		case P6List: return p6_make_list(val->list.vals, val->list.len);
 
 		case P6Any:
@@ -251,4 +271,54 @@ LIBPORT_FUNC void p6_list_append(P6Val *list, P6Val *item) {
 
 	list->list.vals = realloc(list->list.vals, sizeof(P6Val) * ++list->list.len);
 	list->list.vals[list->list.len - 1] = *p6_val_copy(item);
+}
+
+LIBPORT_FUNC int64_t p6_get_int(const P6Val *val) {
+	assert (p6_typeof(val) == P6Int);
+	return val->integer;
+}
+
+LIBPORT_FUNC double p6_get_num(const P6Val *val) {
+	assert (p6_typeof(val) == P6Num);
+	return val->num;
+}
+
+LIBPORT_FUNC char *p6_get_str(const P6Val *val) {
+	assert (p6_typeof(val) == P6Str);
+	return val->str;
+}
+
+LIBPORT_FUNC bool p6_get_bool(const P6Val *val) {
+	assert (p6_typeof(val) == P6Bool);
+	return val->boolean;
+}
+
+LIBPORT_FUNC void *p6_get_funcptr(const P6Val *val) {
+	assert (p6_typeof(val) == P6Sub);
+	return val->sub.addr;
+}
+
+LIBPORT_FUNC ssize_t p6_get_arity(const P6Val *val) {
+	assert (p6_typeof(val) == P6Sub);
+	return val->sub.arity;
+}
+
+LIBPORT_FUNC P6Type p6_get_return_type(const P6Val *val) {
+	assert (p6_typeof(val) == P6Sub);
+	return val->sub.ret;
+}
+
+LIBPORT_FUNC P6Type *p6_get_parameter_types(const P6Val *val) {
+	assert (p6_typeof(val) == P6Sub);
+	return val->sub.arguments;
+}
+
+LIBPORT_FUNC P6Val *p6_list_index(const P6Val *val, size_t i) {
+	assert (p6_typeof(val) == P6List);
+	return val->list.vals + i;
+}
+
+LIBPORT_FUNC size_t p6_list_len(const P6Val *val) {
+	assert (p6_typeof(val) == P6List);
+	return val->list.len;
 }

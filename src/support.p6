@@ -18,9 +18,48 @@ my &make-str = nativecast(:(Str --> Pointer[P6Val]), Pointer.new(+@*ARGS[5]));
 my &make-bool = nativecast(:(bool --> Pointer[P6Val]), Pointer.new(+@*ARGS[6]));
 my &make-any = nativecast(:(Pointer --> Pointer[P6Val]), Pointer.new(+@*ARGS[7]));
 my &make-new-error = nativecast(:(Str --> Pointer[P6Val]), Pointer.new(+@*ARGS[8]));
-my &make-sub = nativecast(:(&fun, CArray[uint32], ssize_t --> Pointer[P6Val]), Pointer.new(+@*ARGS[9]));
+my &make-sub = nativecast(:(&fun (int64, int64), uint32, CArray[uint32], ssize_t --> Pointer[P6Val]), Pointer.new(+@*ARGS[9]));
 my &make-list = nativecast(:(CArray[P6Val], size_t --> Pointer[P6Val]), Pointer.new(+@*ARGS[10]));
 my &list-append = nativecast(:(Pointer[P6Val], Pointer[P6Val]), Pointer.new(+@*ARGS[11]));
+my &type-of = nativecast(:(Pointer[P6Val] --> uint32), Pointer.new(+@*ARGS[12]));
+
+my &get-arity = nativecast(:(Pointer[P6Val] --> ssize_t), Pointer.new(+@*ARGS[13]));
+my &get-bool = nativecast(:(Pointer[P6Val] --> bool), Pointer.new(+@*ARGS[14]));
+my &get-funcptr = nativecast(:(Pointer[P6Val] --> Pointer), Pointer.new(+@*ARGS[15]));
+my &get-int = nativecast(:(Pointer[P6Val] --> int64), Pointer.new(+@*ARGS[16]));
+my &get-num = nativecast(:(Pointer[P6Val] --> num64), Pointer.new(+@*ARGS[17]));
+my &get-parameter-types = nativecast(:(Pointer[P6Val] --> CArray[uint32]), Pointer.new(+@*ARGS[18]));
+my &get-str = nativecast(:(Pointer[P6Val] --> Str), Pointer.new(+@*ARGS[19]));
+my &list-index = nativecast(:(Pointer[P6Val], size_t --> Pointer[P6Val]), Pointer.new(+@*ARGS[20]));
+my &list-len = nativecast(:(Pointer[P6Val] --> size_t), Pointer.new(+@*ARGS[21]));
+my &get-return-type = nativecast(:(Pointer[P6Val] --> uint32), Pointer.new(+@*ARGS[22]));
+
+enum P6Type<P6Any P6Nil P6Int P6Num P6Str P6Bool P6Error P6Sub P6List>;
+sub native-typeid-to-p6(uint32 $type) {
+	given $type {
+		when P6Any { return Any; }
+		when P6Nil { return Any; }
+		when P6Int { return int64; }
+		when P6Num { return num64; }
+		when P6Str { return Str; }
+		when P6Bool { return bool; }
+		when P6Sub { return Sub; }
+		when P6List { return List; }
+		default { return Any; }
+	}
+}
+sub p6-typeid-to-native($type) {
+	given ($type ~~ Parameter) ?? $type.type !! $type {
+		when Bool { P6Bool; }
+		when Int { P6Int; }
+		when Num { P6Num; }
+		when Str { P6Str; }
+		when Sub { P6Sub; }
+		when List { P6List; }
+		when Nil { P6Nil; }
+		default { P6Any; }
+	}
+}
 
 sub p6-to-native($val --> Pointer[P6Val]) {
 	given $val {
@@ -30,10 +69,18 @@ sub p6-to-native($val --> Pointer[P6Val]) {
 		when Str { return make-str $val; }
 		when Nil { return make-nil; }
 		when Sub {
-			return make-nil;
+			# variadic
+			if $val.arity != $val.count {
+				return make-sub(nativecast(Pointer, $val), p6-typeid-to-native($val.signature.returns), Pointer.new, -1);
+			} else {
+				my $argtype-list = CArray[uint32].allocate($val.arity);
+				for ^$val.arity {
+					$argtype-list[$_] = p6-typeid-to-native $val.signature.params[$_];
+				}
+				return make-sub($val, p6-typeid-to-native($val.signature.returns), $argtype-list, $val.arity);
+			}
 		}
 		when List|Range {
-			# TODO: why can't I do this?
 			my $ret = make-list CArray[P6Val].new, 0;
 			for ^$val {
 				list-append $ret, p6-to-native($val[$_]);
@@ -43,7 +90,39 @@ sub p6-to-native($val --> Pointer[P6Val]) {
 		default { return make-any Pointer.new; }
 	}
 }
+sub native-to-p6(Pointer[P6Val] $val) {
+	given type-of $val {
+		when P6Any { return Any; }
+		when P6Nil { return Nil; }
+		when P6Int { return get-int $val; }
+		when P6Num { return get-num $val; }
+		when P6Str { return get-str $val; }
+		when P6Bool { return get-bool $val; }
 
+		when P6Sub {
+			my @parameter-types;
+			my $parameter-types = get-parameter-types $val;
+			my $arity = get-arity $val;
+			for ^$arity {
+				@parameter-types.append: native-typeid-to-p6 $parameter-types[$_];
+			}
+
+			my $signature = Signature.new(params => @parameter-types.map({Parameter.new(type => $_)}), returns => native-typeid-to-p6 get-return-type $val); #, count => ($arity < 0) ?? Inf !! +@parameter-types);
+
+			say "signature is {$signature.perl}, pointer is ", get-funcptr $val;
+			return nativecast($signature, get-funcptr $val);
+		}
+
+		when P6List {
+			my @ret;
+			for ^(list-len $val) {
+				@ret.append: native-to-p6 list-index($val, $_);
+			}
+			return @ret;
+		}
+		default { return Any; }
+	}
+}
 sub evaluate(Str $x --> Pointer[P6Val]) {
 	try {
 		return p6-to-native EVAL $x;
@@ -54,6 +133,23 @@ sub evaluate(Str $x --> Pointer[P6Val]) {
 		return make-new-error($!.gist.lines[1] ~ " (" ~ $!.^name ~ "):\n" ~ $!.gist.lines[2 .. *].join("\n"));
 	}
 }
+sub call(Pointer[P6Val] $fun, Pointer[P6Val] $args --> Pointer[P6Val]) {
+	try {
+		my &fun = native-to-p6 $fun;
+		my @args = native-to-p6 $args;
 
-my &set-evaluator = nativecast(:(Pointer, &callback (Str --> Pointer[P6Val])), Pointer.new(+@*ARGS[0]));
-&set-evaluator(Pointer.new(+@*ARGS[1]), &evaluate);
+		return p6-to-native(fun |@args);
+	}
+
+	if $! {
+		return make-new-error $!.gist;
+		return make-new-error($!.gist.lines[1] ~ " (" ~ $!.^name ~ "):\n" ~ $!.gist.lines[2 .. *].join("\n"));
+	}
+}
+sub addering(int64 $a, int64 $b, int64 $c --> int64) {
+	$a + $b + $c
+}
+
+
+my &set-evaluator = nativecast(:(Pointer, &callback (Str --> Pointer[P6Val]), &callback2 (Pointer[P6Val], Pointer[P6Val] --> Pointer[P6Val])), Pointer.new(+@*ARGS[0]));
+&set-evaluator(Pointer.new(+@*ARGS[1]), &evaluate, &call);
