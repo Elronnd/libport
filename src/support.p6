@@ -66,6 +66,7 @@ sub p6-to-native($val --> P6Val) {
 		when Bool { return make-bool $val; } # this has to be before Int, because Bool ~~ Int
 		when Int { return make-int $val; }
 		when Num { return make-num $val; }
+		when Rat { return make-num Num($val); }
 		when Str { return make-str $val; }
 		when Nil { return make-nil; }
 		when Sub {

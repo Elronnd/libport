@@ -3,6 +3,7 @@ libport.a
 libport.so
 example-static
 example-dynamic
+run-tests
 
 perl6_bundle
 
