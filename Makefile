@@ -1,7 +1,6 @@
 BUNDLE_DIR ?= perl6_bundle
 HEADER_DIR ?= /usr/include
 
-# -isystem flag is because moar headers generate warnings
 # GCC doesn't print warnings for headers in the 'system header path'
 CFLAGS += -g -O0 -fPIC
 CFLAGS += -std=c11 -D_XOPEN_SOURCE=500 -Wall -Wextra

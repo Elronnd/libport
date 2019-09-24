@@ -1,0 +1,2 @@
+TODO:
+ - More sophisticated sub passing (slurpy, optional, named, rw parameters).  See: https://docs.perl6.org/type/Parameter and https://docs.perl6.org/type/Signature (bottom of page)
