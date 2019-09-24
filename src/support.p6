@@ -8,31 +8,31 @@ class P6Val is repr('CStruct') {
 	has Pointer $.dummy2;
 	has Pointer $.dummy3;
 	has Pointer $.dummy4;
+	has uint32 $.type;
 }
 
 
-my &make-nil = nativecast(:(--> Pointer[P6Val]), Pointer.new(+@*ARGS[2]));
-my &make-int = nativecast(:(int64 --> Pointer[P6Val]), Pointer.new(+@*ARGS[3]));
-my &make-num = nativecast(:(num64 --> Pointer[P6Val]), Pointer.new(+@*ARGS[4]));
-my &make-str = nativecast(:(Str --> Pointer[P6Val]), Pointer.new(+@*ARGS[5]));
-my &make-bool = nativecast(:(bool --> Pointer[P6Val]), Pointer.new(+@*ARGS[6]));
-my &make-any = nativecast(:(Pointer --> Pointer[P6Val]), Pointer.new(+@*ARGS[7]));
-my &make-new-error = nativecast(:(Str --> Pointer[P6Val]), Pointer.new(+@*ARGS[8]));
-my &make-sub = nativecast(:(&fun (int64, int64), uint32, CArray[uint32], ssize_t --> Pointer[P6Val]), Pointer.new(+@*ARGS[9]));
-my &make-list = nativecast(:(CArray[P6Val], size_t --> Pointer[P6Val]), Pointer.new(+@*ARGS[10]));
-my &list-append = nativecast(:(Pointer[P6Val], Pointer[P6Val]), Pointer.new(+@*ARGS[11]));
-my &type-of = nativecast(:(Pointer[P6Val] --> uint32), Pointer.new(+@*ARGS[12]));
+my &make-nil = nativecast(:(--> P6Val), Pointer.new(+@*ARGS[2]));
+my &make-int = nativecast(:(int64 --> P6Val), Pointer.new(+@*ARGS[3]));
+my &make-num = nativecast(:(num64 --> P6Val), Pointer.new(+@*ARGS[4]));
+my &make-str = nativecast(:(Str --> P6Val), Pointer.new(+@*ARGS[5]));
+my &make-bool = nativecast(:(bool --> P6Val), Pointer.new(+@*ARGS[6]));
+my &make-any = nativecast(:(Pointer --> P6Val), Pointer.new(+@*ARGS[7]));
+my &make-new-error = nativecast(:(Str --> P6Val), Pointer.new(+@*ARGS[8]));
+my &make-sub = nativecast(:(&fun (int64, int64), uint32, CArray[uint32], ssize_t --> P6Val), Pointer.new(+@*ARGS[9]));
+my &make-list = nativecast(:(CArray[P6Val], size_t --> P6Val), Pointer.new(+@*ARGS[10]));
+my &list-append = nativecast(:(P6Val, P6Val), Pointer.new(+@*ARGS[11]));
 
-my &get-arity = nativecast(:(Pointer[P6Val] --> ssize_t), Pointer.new(+@*ARGS[13]));
-my &get-bool = nativecast(:(Pointer[P6Val] --> bool), Pointer.new(+@*ARGS[14]));
-my &get-funcptr = nativecast(:(Pointer[P6Val] --> Pointer), Pointer.new(+@*ARGS[15]));
-my &get-int = nativecast(:(Pointer[P6Val] --> int64), Pointer.new(+@*ARGS[16]));
-my &get-num = nativecast(:(Pointer[P6Val] --> num64), Pointer.new(+@*ARGS[17]));
-my &get-parameter-types = nativecast(:(Pointer[P6Val] --> CArray[uint32]), Pointer.new(+@*ARGS[18]));
-my &get-str = nativecast(:(Pointer[P6Val] --> Str), Pointer.new(+@*ARGS[19]));
-my &list-index = nativecast(:(Pointer[P6Val], size_t --> Pointer[P6Val]), Pointer.new(+@*ARGS[20]));
-my &list-len = nativecast(:(Pointer[P6Val] --> size_t), Pointer.new(+@*ARGS[21]));
-my &get-return-type = nativecast(:(Pointer[P6Val] --> uint32), Pointer.new(+@*ARGS[22]));
+my &get-arity = nativecast(:(P6Val --> ssize_t), Pointer.new(+@*ARGS[13]));
+my &get-bool = nativecast(:(P6Val --> bool), Pointer.new(+@*ARGS[14]));
+my &get-funcptr = nativecast(:(P6Val --> Pointer), Pointer.new(+@*ARGS[15]));
+my &get-int = nativecast(:(P6Val --> int64), Pointer.new(+@*ARGS[16]));
+my &get-num = nativecast(:(P6Val --> num64), Pointer.new(+@*ARGS[17]));
+my &get-parameter-types = nativecast(:(P6Val --> CArray[uint32]), Pointer.new(+@*ARGS[18]));
+my &get-str = nativecast(:(P6Val --> Str), Pointer.new(+@*ARGS[19]));
+my &list-index = nativecast(:(P6Val, size_t --> P6Val), Pointer.new(+@*ARGS[20]));
+my &list-len = nativecast(:(P6Val --> size_t), Pointer.new(+@*ARGS[21]));
+my &get-return-type = nativecast(:(P6Val --> uint32), Pointer.new(+@*ARGS[22]));
 
 enum P6Type<P6Any P6Nil P6Int P6Num P6Str P6Bool P6Error P6Sub P6List>;
 sub native-typeid-to-p6(uint32 $type) {
@@ -61,7 +61,7 @@ sub p6-typeid-to-native($type) {
 	}
 }
 
-sub p6-to-native($val --> Pointer[P6Val]) {
+sub p6-to-native($val --> P6Val) {
 	given $val {
 		when Bool { return make-bool $val; } # this has to be before Int, because Bool ~~ Int
 		when Int { return make-int $val; }
@@ -90,8 +90,8 @@ sub p6-to-native($val --> Pointer[P6Val]) {
 		default { return make-any Pointer.new; }
 	}
 }
-sub native-to-p6(Pointer[P6Val] $val) {
-	given type-of $val {
+sub native-to-p6(P6Val $val) {
+	given $val.type {
 		when P6Any { return Any; }
 		when P6Nil { return Nil; }
 		when P6Int { return get-int $val; }
@@ -123,7 +123,7 @@ sub native-to-p6(Pointer[P6Val] $val) {
 		default { return Any; }
 	}
 }
-sub evaluate(Str $x --> Pointer[P6Val]) {
+sub evaluate(Str $x --> P6Val) {
 	try {
 		return p6-to-native EVAL $x;
 	}
@@ -133,7 +133,7 @@ sub evaluate(Str $x --> Pointer[P6Val]) {
 		return make-new-error($!.gist.lines[1] ~ " (" ~ $!.^name ~ "):\n" ~ $!.gist.lines[2 .. *].join("\n"));
 	}
 }
-sub call(Pointer[P6Val] $fun, Pointer[P6Val] $args --> Pointer[P6Val]) {
+sub call(P6Val $fun, P6Val $args --> P6Val) {
 	try {
 		my &fun = native-to-p6 $fun;
 		my @args = native-to-p6 $args;
@@ -151,5 +151,5 @@ sub addering(int64 $a, int64 $b, int64 $c --> int64) {
 }
 
 
-my &set-evaluator = nativecast(:(Pointer, &callback (Str --> Pointer[P6Val]), &callback2 (Pointer[P6Val], Pointer[P6Val] --> Pointer[P6Val])), Pointer.new(+@*ARGS[0]));
+my &set-evaluator = nativecast(:(Pointer, &callback (Str --> P6Val), &callback2 (P6Val, P6Val --> P6Val)), Pointer.new(+@*ARGS[0]));
 &set-evaluator(Pointer.new(+@*ARGS[1]), &evaluate, &call);
